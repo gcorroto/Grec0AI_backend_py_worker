@@ -11,7 +11,7 @@ COPY . /app
 RUN pip install redis
 
 # Exponer el puerto si es necesario (en caso de monitorización externa)
-EXPOSE 5000
+EXPOSE 5001
 
 # Comando por defecto para ejecutar el worker Python
 CMD ["python", "redis_worker.py"]
