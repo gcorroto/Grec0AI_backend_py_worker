@@ -1,19 +1,19 @@
-# import redis
-# import subprocess
-# import os
-# import time
-# import uuid
+# # import redis
+# # import subprocess
+# # import os
+# # import time
+# # import uuid
 
-# # Conectar con Redis
-# r = redis.StrictRedis(host='redis', port=6379, db=0)  # 'redis' es el nombre del servicio Redis en Docker Compose
+# # # Conectar con Redis
+# # r = redis.StrictRedis(host='redis', port=6379, db=0)  # 'redis' es el nombre del servicio Redis en Docker Compose
 
-# SCRIPTS_DIR = "/scripts"
-# os.makedirs(SCRIPTS_DIR, exist_ok=True)
+# # SCRIPTS_DIR = "/scripts"
+# # os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
-# def process_script(script_content, script_id):
-#     r.set(f"script_status_{script_id}", "in_progress")
-#     unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
-#     script_path = f"{SCRIPTS_DIR}/temp_script_{unique_id}.py"
+# # def process_script(script_content, script_id):
+# #     r.set(f"script_status_{script_id}", "in_progress")
+# #     unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
+# #     script_path = f"{SCRIPTS_DIR}/temp_script_{unique_id}.py"
     
 #     # Guardar el script
 #     with open(script_path, 'w') as script_file:
@@ -42,5 +42,5 @@
 #         script_id, script_content = script_data.split(":", 1)
 #         process_script(script_content, script_id)
 
-# if __name__ == "__main__":
-#     main()
+# # if __name__ == "__main__":
+# #     main()
