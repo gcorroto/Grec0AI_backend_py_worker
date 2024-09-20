@@ -33,7 +33,15 @@ class ScriptService:
         # Generar un ID único para el script
         unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
         script_path = os.path.join(f"{current_dir}/scripts", f"temp_script_{unique_id}.py")
-        
+        script_directory = os.path.dirname(script_path)
+
+        # Verificar si el directorio existe y crearlo si es necesario
+        if not os.path.exists(script_directory):
+            os.makedirs(script_directory, exist_ok=True)
+            print(f"Directorio creado: {script_directory}")
+        else:
+            print(f"El directorio ya existe: {script_directory}")
+
         # Guardar el script en un archivo
         with open(script_path, 'w') as script_file:
             script_file.write(script_content)
