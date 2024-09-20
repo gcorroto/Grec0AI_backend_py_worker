@@ -34,7 +34,13 @@ class ScriptService:
         with open(script_path, 'w') as script_file:
             script_file.write(script_content)
 
-        print(f"Script guardado en {script_path}, ejecutando...")
+        print(f"Script guardado en {script_path}, verificando...")
+
+        # Verificar si el archivo existe
+        if not os.path.exists(script_path):
+            raise FileNotFoundError(f"El archivo {script_path} no se creó correctamente.")
+
+        print("El archivo existe, procediendo a ejecutar en Docker...")
 
         # Ejecutar el script en Docker
         try:
