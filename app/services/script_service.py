@@ -58,7 +58,7 @@ class ScriptService:
         try:
             result = subprocess.run([
                 'docker', 'run', '--rm',
-                '-v', f'{current_dir}/scripts":/scripts',
+                '-v', f'{current_dir}/scripts:/scripts',
                 'localhost:5000/py-ai-scripter',
                 f'python /scripts/temp_script_{unique_id}.py'
             ], capture_output=True, text=True, check=True)
