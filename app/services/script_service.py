@@ -27,7 +27,7 @@ class ScriptService:
 
     def process_script(self, script_content, script_id):
         # Actualizar el estado a "in_progress"
-        self.redis_service.update_status(script_id, "in_progress")
+        self.redis_service.update_status(script_id, 'in_progress')
         # Obtener el directorio de trabajo actual
         current_dir = os.getcwd()
         # Generar un ID único para el script
@@ -66,7 +66,7 @@ class ScriptService:
 
             
             print(f"Script ejecutado con éxito: {result.stdout}")
-            output_file = f"/scripts/output_{unique_id}.png"  # Ejemplo de archivo generado
+            output_file = "/scripts/output.png"  # Ejemplo de archivo generado
 
             if os.path.exists(output_file):
                 # Subir el archivo binario a MySQL
@@ -74,15 +74,17 @@ class ScriptService:
                 
                 # Enviar la referencia del archivo a Redis
                 self.redis_service.push_result(script_id, f"Archivo guardado con ID: {file_id}")
+                # Borrar el archivo del sistema de archivos
+                os.remove(output_file)
             else:
                 # Si no hay archivo, enviar el texto directamente a Redis
                 self.redis_service.push_result(script_id, result.stdout)
 
-            self.redis_service.update_status(script_id, "completed")
+            self.redis_service.update_status(script_id, 'completed')
 
         except subprocess.CalledProcessError as e:
             # Manejo de errores
             error_message = f"Error al ejecutar el script {script_path}: {e.stderr}"
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
-            self.redis_service.update_status(script_id, "failed")
+            self.redis_service.update_status(script_id, 'failed')

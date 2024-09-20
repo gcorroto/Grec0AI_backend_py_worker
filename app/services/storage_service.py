@@ -8,9 +8,17 @@ class StorageService:
             cursor = conn.cursor()
             with open(file_path, 'rb') as file:
                 binary_data = file.read()
-                cursor.execute("INSERT INTO files (file_data) VALUES (%s)", (binary_data,))
+                cursor.execute("""
+                    INSERT INTO file_text (uuid, index_llm, nombre, contenido, num_oraciones_nlp, progreso, estado)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (self.generate_uuid(), '', os.path.basename(file_path), binary_data, 0, 0, 'AC'))
                 conn.commit()
                 return cursor.lastrowid
+
+    def generate_uuid():
+        """Genera un UUID único."""
+        import uuid
+        return str(uuid.uuid4())
 
     def get_file_from_mysql(self, file_id):
         """Recupera un archivo desde MySQL por su ID."""
