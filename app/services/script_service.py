@@ -5,6 +5,9 @@ import redis
 import subprocess
 from app.services.storage_service import StorageService
 
+
+
+
 SCRIPTS_DIR = os.path.abspath("/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
@@ -25,10 +28,11 @@ class ScriptService:
     def process_script(self, script_content, script_id):
         # Actualizar el estado a "in_progress"
         self.redis_service.update_status(script_id, "in_progress")
-        
+        # Obtener el directorio de trabajo actual
+        current_dir = os.getcwd()
         # Generar un ID único para el script
         unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
-        script_path = f"{SCRIPTS_DIR}/temp_script_{unique_id}.py"
+        script_path = os.path.join(f"{current_dir}/scripts", f"temp_script_{unique_id}.py")
         
         # Guardar el script en un archivo
         with open(script_path, 'w') as script_file:
@@ -46,7 +50,7 @@ class ScriptService:
         try:
             result = subprocess.run([
                 'docker', 'run', '--rm',
-                '-v', f'{SCRIPTS_DIR}:/scripts',
+                '-v', f'{current_dir}/scripts":/scripts',
                 'localhost:5000/py-ai-scripter',
                 f'python /scripts/temp_script_{unique_id}.py'
             ], capture_output=True, text=True, check=True)
