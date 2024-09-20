@@ -61,8 +61,9 @@ class ScriptService:
                 '-v', f'{current_dir}/scripts:/scripts',
                 '-w', '/scripts',
                 'localhost:5000/py-ai-scripter',
-                f'python /scripts/temp_script_{unique_id}.py'
+                'python', f'/scripts/temp_script_{unique_id}.py'
             ], capture_output=True, text=True, check=True)
+
             
             print(f"Script ejecutado con éxito: {result.stdout}")
             output_file = f"/scripts/output_{unique_id}.png"  # Ejemplo de archivo generado
