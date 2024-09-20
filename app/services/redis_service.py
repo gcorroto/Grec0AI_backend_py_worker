@@ -14,7 +14,17 @@ class RedisService:
 
     def update_status(self, script_id, status):
         """Actualiza el estado del script en Redis."""
-        self.r.set(f"script_status_{script_id}", status)
+        key = f"script_status_{script_id}"
+        
+        # Verificar el tipo de la clave
+        if self.r.exists(key):
+            key_type = self.r.type(key)
+            if key_type != b'list':
+                self.r.delete(key)
+        
+        # Usar rpush para todos los estados
+        self.r.rpush(key, status)
+
 
     def push_result(self, script_id, result):
         """Envía el resultado del script a Redis."""
