@@ -66,7 +66,7 @@ class ScriptService:
 
             
             print(f"Script ejecutado con éxito: {result.stdout}")
-            output_file = "/scripts/output.png"  # Ejemplo de archivo generado
+            output_file = f"{current_dir}/scripts/output.png"  # Ejemplo de archivo generado
 
             if os.path.exists(output_file):
                 # Subir el archivo binario a MySQL
@@ -79,9 +79,10 @@ class ScriptService:
             else:
                 # Si no hay archivo, enviar el texto directamente a Redis
                 self.redis_service.push_result(script_id, result.stdout)
-
+        
+            os.remove(script_path)
             self.redis_service.update_status(script_id, 'completed')
-
+           
         except subprocess.CalledProcessError as e:
             # Manejo de errores
             error_message = f"Error al ejecutar el script {script_path}: {e.stderr}"
