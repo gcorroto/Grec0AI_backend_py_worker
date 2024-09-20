@@ -5,7 +5,7 @@ import redis
 import subprocess
 from app.services.storage_service import StorageService
 
-SCRIPTS_DIR = "/scripts"
+SCRIPTS_DIR = os.path.abspath("/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
 class ScriptService:
