@@ -2,7 +2,7 @@ import redis
 
 class RedisService:
     def __init__(self):
-        self.r = redis.StrictRedis(host='172.25.0.3', port=6379, db=0)  # Configuración de Redis
+        self.r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)  # Configuración de Redis
 
     def get_next_script(self):
         """Obtiene el siguiente script de la cola en Redis."""

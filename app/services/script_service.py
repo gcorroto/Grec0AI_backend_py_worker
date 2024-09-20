@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+import redis
 import subprocess
 from app.services.storage_service import StorageService
 
@@ -11,6 +12,15 @@ class ScriptService:
     def __init__(self, redis_service):
         self.redis_service = redis_service
         self.storage_service = StorageService()
+
+    
+    def check_redis_connection(self):
+        try:
+            self.redis_service.r.ping()
+            print("Conexión a Redis exitosa")
+        except redis.ConnectionError:
+            print("Error al conectar a Redis")
+        
 
     def process_script(self, script_content, script_id):
         # Actualizar el estado a "in_progress"

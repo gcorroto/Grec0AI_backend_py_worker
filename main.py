@@ -11,6 +11,7 @@ def main():
         script_data = redis_service.get_next_script()
         if script_data:
             script_id, script_content = script_data
+            print(f"Procesando script {script_id} con contenido: {script_content}")
             script_service.process_script(script_content, script_id)
 
 if __name__ == "__main__":
