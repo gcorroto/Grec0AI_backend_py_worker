@@ -15,6 +15,7 @@ class StorageService:
                 conn.commit()
                 return cursor.lastrowid
 
+    @staticmethod
     def generate_uuid():
         """Genera un UUID único."""
         import uuid
