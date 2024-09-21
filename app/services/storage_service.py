@@ -10,8 +10,8 @@ class StorageService:
                 binary_data = file.read()
                 cursor.execute("""
                     INSERT INTO file_script_content (uuid, nombre, contenido)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (self.generate_uuid(),  os.path.basename(file_path), binary_data))
+                    VALUES (%s, %s, %s)
+                """, (self.generate_uuid(), os.path.basename(file_path), binary_data))
                 conn.commit()
                 return cursor.lastrowid
 
