@@ -25,12 +25,16 @@ class VideoAudioService:
         current_dir = os.getcwd()
         unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
 
-        # Rutas para el video de entrada y audio de salida
-        input_video_name = f"input_{unique_id}.mp4"
-        output_audio_name = f"output_{unique_id}.mp3"
-
-        input_video_path = os.path.join(SCRIPTS_DIR, input_video_name)
-        output_audio_path = os.path.join(SCRIPTS_DIR, output_audio_name)
+         # Definir nombres para el video de entrada y el audio de salida
+        input_video_name = f"input_{unique_id}"  # sin extensión
+        output_audio_name = f"output_{unique_id}"  # sin extensión
+        
+        input_video_path = os.path.join(SCRIPTS_DIR, f"{input_video_name}.mp4")
+        output_audio_path = os.path.join(SCRIPTS_DIR, f"{output_audio_name}.mp3")
+        
+        # Reemplazar placeholders en el script_content
+        script_content = script_content.replace("{{input_name}}", input_video_name)\
+                                       .replace("{{output_name}}", output_audio_name)
 
         # 2) Crear un archivo con el contenido del script
         script_file_name = f"temp_script_{unique_id}.py"
