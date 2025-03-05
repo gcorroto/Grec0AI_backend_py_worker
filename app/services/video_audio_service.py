@@ -53,7 +53,7 @@ class VideoAudioService:
 
         # 3) Obtener el video desde MySQL
         try:
-            video_bytes = self.storage_service.get_file_from_mysql(video_id)
+            video_bytes = self.storage_service.get_video_from_mysql(video_id)
             with open(input_video_path, 'wb') as f:
                 f.write(video_bytes)
             print(f"Video guardado en {input_video_path}")
@@ -82,8 +82,8 @@ class VideoAudioService:
             # 5) Verificar si se generó el archivo de audio
             if os.path.exists(output_audio_path):
                 # Subir el archivo de audio a MySQL y obtener un ID
-                file_id = self.storage_service.save_file_to_mysql(output_audio_path)
-                self.redis_service.push_result(script_id, f"Audio MP3 guardado con ID: {file_id}")
+                file_id = self.storage_service.save_file_to_mysql(output_audio_path, 'audio')
+                self.redis_service.push_result(script_id, f"file_id:{file_id}")
                 os.remove(output_audio_path)
             else:
                 # Si no se encontró el output, mandamos el stdout como info
