@@ -69,7 +69,7 @@ class VideoAudioService:
                 'docker', 'run', '--rm',
                 '-v', f'{SCRIPTS_DIR}:/scripts',
                 '-w', '/scripts',
-                'localhost:5000/py-ai-scripter',  # Imagen Docker que incluye Python y FFmpeg
+                'localhost:5000/py-audio',  # Imagen Docker que incluye Python y FFmpeg
                 'python', f'/scripts/{script_file_name}'
             ], capture_output=True, text=True, check=True)
 

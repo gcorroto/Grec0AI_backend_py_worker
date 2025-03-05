@@ -60,7 +60,7 @@ class ScriptService:
                 'docker', 'run', '--rm',
                 '-v', f'{current_dir}/scripts:/scripts',
                 '-w', '/scripts',
-                'localhost:5000/py-ai-scripter',
+                'localhost:5000/py-graph',
                 'python', f'/scripts/temp_script_{unique_id}.py'
             ], capture_output=True, text=True, check=True)
 
