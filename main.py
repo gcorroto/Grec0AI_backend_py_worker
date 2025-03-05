@@ -6,7 +6,7 @@ from app.services.video_audio_service import VideoAudioService
 from app.services.frames_storage_service import FramesStorageService
 
 def script_worker(redis_service, script_service):
-    print("Iniciando worker de scripts...")
+    print("Iniciando worker de scripts para generar imagenes...")
     while True:
         # Escucha en la cola "scripts_queue"
         script_data = redis_service.get_next_script()
@@ -30,7 +30,7 @@ def video_worker(redis_service, video_audio_service):
             time.sleep(1)
 
 def frames_worker(redis_service, frames_storage_service):
-    print("Iniciando worker de conversión de video a audio...")
+    print("Iniciando worker de extracion de frames...")
     while True:
         # Escucha en la cola "video_scripts_queue"
         frames_script_data = redis_service.get_next_frames_script()
