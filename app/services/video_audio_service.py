@@ -4,7 +4,6 @@ import uuid
 import subprocess
 from app.services.storage_service import StorageService
 
-# Directorio para trabajar con los scripts y archivos
 SCRIPTS_DIR = os.path.abspath("/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
@@ -14,16 +13,41 @@ class VideoAudioService:
         self.storage_service = StorageService()
 
     def process_video_conversion(self, script_content, script_id, video_id):
-        # Actualizar el estado a "in_progress"
+        """
+        1. Crea un archivo con el script Python (script_content).
+        2. Descarga el video de MySQL y lo guarda como input_{unique_id}.mp4.
+        3. Lanza el contenedor Docker para ejecutar ese script, que hará la conversión a output_{unique_id}.mp3.
+        4. Sube el MP3 resultante a MySQL y notifica en Redis.
+        """
+        # 1) Actualizar el estado a "in_progress"
         self.redis_service.update_status(script_id, 'in_progress')
+
         current_dir = os.getcwd()
         unique_id = f"{script_id}_{int(time.time())}_{uuid.uuid4().hex}"
-        
-        # Definir rutas para el video de entrada y el audio de salida
-        input_video_path = os.path.join(current_dir, "scripts", f"input_{unique_id}.mp4")
-        output_audio_path = os.path.join(current_dir, "scripts", f"output_{unique_id}.mp3")
 
-        # 1. Obtener el video desde MySQL mediante el video_id
+        # Rutas para el video de entrada y audio de salida
+        input_video_name = f"input_{unique_id}.mp4"
+        output_audio_name = f"output_{unique_id}.mp3"
+
+        input_video_path = os.path.join(SCRIPTS_DIR, input_video_name)
+        output_audio_path = os.path.join(SCRIPTS_DIR, output_audio_name)
+
+        # 2) Crear un archivo con el contenido del script
+        script_file_name = f"temp_script_{unique_id}.py"
+        script_path = os.path.join(SCRIPTS_DIR, script_file_name)
+
+        try:
+            with open(script_path, 'w', encoding='utf-8') as f:
+                f.write(script_content)
+            print(f"Script guardado en {script_path}")
+        except Exception as e:
+            error_message = f"Error al guardar el script: {str(e)}"
+            print(error_message)
+            self.redis_service.push_result(script_id, error_message)
+            self.redis_service.update_status(script_id, 'failed')
+            return
+
+        # 3) Obtener el video desde MySQL
         try:
             video_bytes = self.storage_service.get_file_from_mysql(video_id)
             with open(input_video_path, 'wb') as f:
@@ -34,39 +58,43 @@ class VideoAudioService:
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
             self.redis_service.update_status(script_id, 'failed')
+            # Limpieza del script
+            if os.path.exists(script_path):
+                os.remove(script_path)
             return
 
-        # 2. Ejecutar FFmpeg en Docker para convertir el video a audio (MP3)
+        # 4) Ejecutar el script dentro del contenedor Docker
         try:
             result = subprocess.run([
                 'docker', 'run', '--rm',
-                '-v', f'{current_dir}/scripts:/scripts',
+                '-v', f'{SCRIPTS_DIR}:/scripts',
                 '-w', '/scripts',
-                'localhost:5000/py-ai-scripter',  # Imagen Docker que incluye FFmpeg
-                'ffmpeg',
-                '-i', f'/scripts/{os.path.basename(input_video_path)}',
-                '-vn',             # Ignorar el video
-                '-ab', '192k',     # Bitrate del audio
-                '-y',              # Sobrescribir el archivo de salida sin preguntar
-                f'/scripts/{os.path.basename(output_audio_path)}'
+                'localhost:5000/py-ai-scripter',  # Imagen Docker que incluye Python y FFmpeg
+                'python', f'/scripts/{script_file_name}'
             ], capture_output=True, text=True, check=True)
 
-            print(f"Conversión ejecutada con éxito: {result.stdout}")
+            print(f"Script ejecutado con éxito: {result.stdout}")
 
-            # 3. Verificar si se generó el archivo de audio
+            # 5) Verificar si se generó el archivo de audio
             if os.path.exists(output_audio_path):
                 # Subir el archivo de audio a MySQL y obtener un ID
                 file_id = self.storage_service.save_file_to_mysql(output_audio_path)
                 self.redis_service.push_result(script_id, f"Audio MP3 guardado con ID: {file_id}")
                 os.remove(output_audio_path)
             else:
-                self.redis_service.push_result(script_id, result.stdout)
+                # Si no se encontró el output, mandamos el stdout como info
+                self.redis_service.push_result(script_id, f"No se encontró {output_audio_name}. {result.stdout}")
 
-            # Limpiar: eliminar el video de entrada
-            os.remove(input_video_path)
+            # Actualizar estado a completado
             self.redis_service.update_status(script_id, 'completed')
         except subprocess.CalledProcessError as e:
-            error_message = f"Error al convertir el video a audio: {e.stderr}"
+            error_message = f"Error al ejecutar el script: {e.stderr}"
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
             self.redis_service.update_status(script_id, 'failed')
+        finally:
+            # Limpieza de archivos temporales
+            if os.path.exists(input_video_path):
+                os.remove(input_video_path)
+            if os.path.exists(script_path):
+                os.remove(script_path)
