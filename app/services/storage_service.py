@@ -21,10 +21,27 @@ class StorageService:
         import uuid
         return str(uuid.uuid4())
 
+    # def get_video_from_mysql(self, file_id):
+    #     """Recupera un archivo desde MySQL por su ID."""
+    #     with get_db_connection() as conn:
+    #         cursor = conn.cursor()
+    #         cursor.execute("SELECT contenido FROM file_video WHERE id = %s", (file_id,))
+    #         file_data = cursor.fetchone()[0]
+    #         return file_data
     def get_video_from_mysql(self, file_id):
-        """Recupera un archivo desde MySQL por su ID."""
+        """Recupera y concatena los fragmentos de un video desde MySQL por su ID."""
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT contenido FROM file_video WHERE id = %s", (file_id,))
-            file_data = cursor.fetchone()[0]
-            return file_data
+            cursor.execute("""
+                SELECT fragment FROM file_content_video 
+                WHERE video_id = %s 
+                ORDER BY id ASC
+            """, (file_id,))
+            fragments = cursor.fetchall()
+
+            if not fragments:
+                return None
+
+            # Concatenar todos los fragmentos en un solo byte array
+            video_data = b''.join([fragment[0] for fragment in fragments])
+            return video_data
