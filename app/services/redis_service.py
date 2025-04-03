@@ -39,6 +39,19 @@ class RedisService:
             if len(parts) == 3:
                 return parts
         return None
+    def get_next_metadata_script(self):
+        """
+        Obtiene el siguiente mensaje de la cola en Redis para la extraccion de metadatos.
+        Se espera el formato: script_id:script_content:video_id
+        """
+        script_data = self.r.blpop("metadata_scripts_queue", timeout=0)
+        if script_data:
+            decoded_data = script_data[1].decode("utf-8")
+            # Separa en 3 partes (separadas por dos puntos)
+            parts = decoded_data.split(":", 2)
+            if len(parts) == 3:
+                return parts
+        return None
 
     def update_status(self, script_id, status):
         """Actualiza el estado del script en Redis."""
