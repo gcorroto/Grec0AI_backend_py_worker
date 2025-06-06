@@ -1,8 +1,15 @@
 import redis
+from rq import Queue
+from app.services import rq_tasks
 
 class RedisService:
     def __init__(self):
         self.r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)  # Configuración de Redis
+        # Colas de RQ para los distintos flujos
+        self.script_queue = Queue('scripts_queue', connection=self.r)
+        self.video_queue = Queue('video_scripts_queue', connection=self.r)
+        self.frames_queue = Queue('frames_scripts_queue', connection=self.r)
+        self.metadata_queue = Queue('metadata_scripts_queue', connection=self.r)
 
     def get_next_script(self):
         """Obtiene el siguiente script de la cola en Redis (flujo original)."""
@@ -65,3 +72,20 @@ class RedisService:
     def push_result(self, script_id, result):
         """Envía el resultado del script a Redis."""
         self.r.rpush(f"results_queue_{script_id}", result)
+
+    # --- Métodos para usar RQ ---
+    def enqueue_script(self, script_id: str, script_content: str):
+        """Encola la ejecución de un script como trabajo de RQ."""
+        self.script_queue.enqueue(rq_tasks.process_script_task, script_id, script_content)
+
+    def enqueue_video_conversion(self, script_id: str, script_content: str, video_id: str):
+        """Encola la conversión de video a audio."""
+        self.video_queue.enqueue(rq_tasks.process_video_task, script_id, script_content, video_id)
+
+    def enqueue_frames_extraction(self, script_id: str, script_content: str, video_id: str):
+        """Encola la extracción de frames de un video."""
+        self.frames_queue.enqueue(rq_tasks.process_frames_task, script_id, script_content, video_id)
+
+    def enqueue_metadata_extraction(self, script_id: str, script_content: str, video_id: str):
+        """Encola la extracción de metadatos de un video."""
+        self.metadata_queue.enqueue(rq_tasks.process_metadata_task, script_id, script_content, video_id)
