@@ -345,6 +345,13 @@ redis_service.enqueue_frames_extraction("script_789", "script_content", "video_1
 
 # Trabajo de extracción de metadatos
 redis_service.enqueue_metadata_extraction("script_101", "script_content", "video_456")
+
+# Despliegue de un frontend desde código HTML
+html_code = "<h1>Hola</h1>"
+redis_service.enqueue_frontend_deployment("deploy_001", html_code)
+# Obtener la URL generada
+url = redis_service.r.blpop("results_queue_deploy_001")[1].decode("utf-8")
+print(url)
 ```
 
 #### Modo Tradicional
@@ -359,6 +366,7 @@ python main.py
 - `video_scripts_queue`: Scripts para conversión video-audio
 - `frames_scripts_queue`: Scripts para extracción de frames
 - `metadata_scripts_queue`: Scripts para extracción de metadatos
+- `frontend_queue`: Despliegue de frontends estáticos
 
 ## Especificaciones Técnicas
 

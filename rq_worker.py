@@ -5,7 +5,8 @@ listen = [
     'scripts_queue',
     'video_scripts_queue',
     'frames_scripts_queue',
-    'metadata_scripts_queue'
+    'metadata_scripts_queue',
+    'frontend_queue'
 ]
 
 redis_conn = Redis(host='127.0.0.1', port=6379, db=0)

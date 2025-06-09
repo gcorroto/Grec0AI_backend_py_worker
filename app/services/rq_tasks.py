@@ -3,12 +3,14 @@ from app.services.script_service import ScriptService
 from app.services.video_audio_service import VideoAudioService
 from app.services.frames_storage_service import FramesStorageService
 from app.services.metadata_storage_service import MetadataStorageService
+from app.services.frontend_service import FrontendService
 
 redis_service = RedisService()
 script_service = ScriptService(redis_service)
 video_audio_service = VideoAudioService(redis_service)
 frames_storage_service = FramesStorageService(redis_service)
 metadata_storage_service = MetadataStorageService(redis_service)
+frontend_service = FrontendService(redis_service)
 
 
 def process_script_task(script_id: str, script_content: str):
@@ -29,3 +31,8 @@ def process_frames_task(script_id: str, script_content: str, video_id: str):
 def process_metadata_task(script_id: str, script_content: str, video_id: str):
     """Process metadata extraction using the MetadataStorageService."""
     metadata_storage_service.process_video_metadata(script_content, script_id, video_id)
+
+
+def deploy_frontend_from_code_task(code: str, deployment_id: str, port: int | None = None):
+    """Build and deploy a frontend directly from HTML code."""
+    frontend_service.build_and_deploy(code, deployment_id, port)
