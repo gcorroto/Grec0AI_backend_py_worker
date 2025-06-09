@@ -425,3 +425,29 @@ Script ejecutado con éxito: output
 - Errores de ejecución se capturan y reportan via Redis
 - Archivos temporales se limpian automáticamente
 - Estados de error se almacenan para debugging
+
+## Despliegue Din\xE1mico de Frontends
+
+Se a\xF1adi\xF3 el servicio `FrontendService` para lanzar contenedores Docker con un front-end est\xE1tico servido por Nginx. El contenedor usa siempre el puerto 80 internamente y se expone a un puerto din\xE1mico en el host.
+
+### Crear la imagen de ejemplo
+
+```bash
+docker build -t my-frontend ./frontend_example
+```
+
+### Lanzar un contenedor
+
+```python
+from app.services.frontend_service import FrontendService
+
+service = FrontendService()
+info = service.deploy_frontend("my-frontend")
+print(f"Frontend disponible en http://localhost:{info['port']}")
+```
+
+### Detener el contenedor
+
+```python
+service.stop_frontend(info["container_id"])
+```

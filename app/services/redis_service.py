@@ -10,6 +10,7 @@ class RedisService:
         self.video_queue = Queue('video_scripts_queue', connection=self.r)
         self.frames_queue = Queue('frames_scripts_queue', connection=self.r)
         self.metadata_queue = Queue('metadata_scripts_queue', connection=self.r)
+        self.frontend_queue = Queue('frontend_queue', connection=self.r)
 
     def get_next_script(self):
         """Obtiene el siguiente script de la cola en Redis (flujo original)."""
@@ -89,3 +90,7 @@ class RedisService:
     def enqueue_metadata_extraction(self, script_id: str, script_content: str, video_id: str):
         """Encola la extracción de metadatos de un video."""
         self.metadata_queue.enqueue(rq_tasks.process_metadata_task, script_id, script_content, video_id)
+
+    def enqueue_frontend_deployment(self, image_name: str):
+        """Encola el despliegue de un frontend estático."""
+        self.frontend_queue.enqueue(rq_tasks.deploy_frontend_task, image_name)
