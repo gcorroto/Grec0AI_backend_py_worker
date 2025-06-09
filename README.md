@@ -234,8 +234,8 @@ graph TB
         end
         
         subgraph "File System"
-            Scripts[/scripts Directory]
-            Temp[/tmp Files]
+            Scripts["/scripts Directory"]
+            Temp["/tmp Files"]
         end
     end
     
