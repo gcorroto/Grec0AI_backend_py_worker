@@ -91,6 +91,14 @@ class RedisService:
         """Encola la extracción de metadatos de un video."""
         self.metadata_queue.enqueue(rq_tasks.process_metadata_task, script_id, script_content, video_id)
 
-    def enqueue_frontend_deployment(self, deployment_id: str, code: str, port: int | None = None):
-        """Encola el despliegue de un frontend desde código HTML."""
-        self.frontend_queue.enqueue(rq_tasks.deploy_frontend_from_code_task, code, deployment_id, port)
+    def enqueue_frontend_deployment(
+        self, deployment_id: str, code: str, port: int | None = None, npm: bool = False
+    ):
+        """Encola el despliegue de un frontend.
+
+        ``code`` puede ser un string HTML o un proyecto npm codificado en base64
+        si ``npm`` es ``True``.
+        """
+        self.frontend_queue.enqueue(
+            rq_tasks.deploy_frontend_from_code_task, code, deployment_id, port, npm
+        )

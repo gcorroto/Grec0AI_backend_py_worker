@@ -349,8 +349,15 @@ redis_service.enqueue_metadata_extraction("script_101", "script_content", "video
 # Despliegue de un frontend desde código HTML
 html_code = "<h1>Hola</h1>"
 redis_service.enqueue_frontend_deployment("deploy_001", html_code)
-# Obtener la URL generada
-url = redis_service.r.blpop("results_queue_deploy_001")[1].decode("utf-8")
+
+# Despliegue de un frontend basado en npm (tar.gz codificado en base64)
+import base64
+with open("my_app.tar.gz", "rb") as f:
+    encoded = base64.b64encode(f.read()).decode("utf-8")
+redis_service.enqueue_frontend_deployment("deploy_002", encoded, npm=True)
+
+# Obtener la URL generada para cualquiera de los despliegues
+url = redis_service.r.blpop("results_queue_deploy_002")[1].decode("utf-8")
 print(url)
 ```
 
@@ -366,7 +373,7 @@ python main.py
 - `video_scripts_queue`: Scripts para conversión video-audio
 - `frames_scripts_queue`: Scripts para extracción de frames
 - `metadata_scripts_queue`: Scripts para extracción de metadatos
-- `frontend_queue`: Despliegue de frontends estáticos
+- `frontend_queue`: Despliegue de frontends (HTML o proyectos npm)
 
 ## Especificaciones Técnicas
 

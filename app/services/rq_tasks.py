@@ -33,6 +33,6 @@ def process_metadata_task(script_id: str, script_content: str, video_id: str):
     metadata_storage_service.process_video_metadata(script_content, script_id, video_id)
 
 
-def deploy_frontend_from_code_task(code: str, deployment_id: str, port: int | None = None):
-    """Build and deploy a frontend directly from HTML code."""
-    frontend_service.build_and_deploy(code, deployment_id, port)
+def deploy_frontend_from_code_task(code: str, deployment_id: str, port: int | None = None, npm: bool = False):
+    """Build and deploy a frontend from HTML or an npm project."""
+    frontend_service.build_and_deploy(code, deployment_id, port, npm)

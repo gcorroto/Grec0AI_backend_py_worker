@@ -37,20 +37,50 @@ class FrontendService:
             self.redis_service.update_status(deployment_id, "failed")
             raise
 
-    def build_and_deploy(self, code: str, deployment_id: str, port: Optional[int] = None) -> str:
-        """Build a simple nginx image from HTML code and deploy it."""
+    def build_and_deploy(self, code: str, deployment_id: str, port: Optional[int] = None, npm: bool = False) -> str:
+        """Build and deploy frontend code as a Docker container.
+
+        If ``npm`` is ``False`` the code is treated as a plain HTML string. When
+        ``npm`` is ``True`` the ``code`` parameter is expected to be a base64
+        encoded ``tar.gz`` archive containing an npm project.
+        """
         temp_dir = tempfile.mkdtemp(prefix=f"frontend_{deployment_id}_")
         try:
-            index_path = os.path.join(temp_dir, "index.html")
-            with open(index_path, "w", encoding="utf-8") as f:
-                f.write(code)
+            if npm:
+                import base64
+                import io
+                import tarfile
+
+                tar_bytes = base64.b64decode(code)
+                with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
+                    tar.extractall(temp_dir)
+
+                dockerfile_contents = (
+                    "FROM node:18-alpine\n"
+                    "WORKDIR /app\n"
+                    "COPY . .\n"
+                    "RUN npm install\n"
+                    "RUN npm run build || true\n"
+                    "RUN npm install -g serve\n"
+                    "CMD ['serve', '-s', 'build', '-l', '80']\n"
+                )
+            else:
+                index_path = os.path.join(temp_dir, "index.html")
+                with open(index_path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+                dockerfile_contents = (
+                    "FROM nginx:alpine\n"
+                    "COPY index.html /usr/share/nginx/html/index.html\n"
+                )
 
             dockerfile_path = os.path.join(temp_dir, "Dockerfile")
             with open(dockerfile_path, "w", encoding="utf-8") as f:
-                f.write("FROM nginx:alpine\nCOPY index.html /usr/share/nginx/html/index.html\n")
+                f.write(dockerfile_contents)
 
             image_tag = f"frontend:{deployment_id}"
             subprocess.run(["docker", "build", "-t", image_tag, temp_dir], check=True)
             return self.deploy_frontend(image_tag, deployment_id, port)
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
