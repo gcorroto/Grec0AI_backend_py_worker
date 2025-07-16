@@ -2,5 +2,6 @@
 venv
 __pycache__
 *.pyc
-scripts/**.py
+scripts/temp_*.py
 cr3
+demo_*.py

@@ -79,6 +79,11 @@ class RedisService:
         """Encola la ejecución de un script como trabajo de RQ."""
         self.script_queue.enqueue(rq_tasks.process_script_task, script_id, script_content)
 
+    def enqueue_graphviz(self, script_id: str, graphviz_content: str):
+        """Encola la renderización de contenido Graphviz como trabajo de RQ."""
+        # Reuses the same script queue since ScriptService now handles both types
+        self.script_queue.enqueue(rq_tasks.process_script_task, script_id, graphviz_content)
+
     def enqueue_video_conversion(self, script_id: str, script_content: str, video_id: str):
         """Encola la conversión de video a audio."""
         self.video_queue.enqueue(rq_tasks.process_video_task, script_id, script_content, video_id)
