@@ -1,13 +1,7 @@
-import os
-from app.utils.database import get_db_connection
-
-class StorageService:
-    def save_file_to_mysql(self, file_path, type):
+# -*- coding, file_path, type):
         """Guarda el archivo en MySQL como binario y retorna su ID."""
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            with open(file_path, 'rb') as file:
-                binary_data = file.read()
+        with get_db_connection() as conn= conn.cursor()
+            with open(file_path, 'rb') as file= file.read()
                 cursor.execute("""
                     INSERT INTO file_script_content (uuid, nombre, contenido, type)
                     VALUES (%s, %s, %s, %s)
@@ -23,15 +17,13 @@ class StorageService:
 
     # def get_video_from_mysql(self, file_id):
     #     """Recupera un archivo desde MySQL por su ID."""
-    #     with get_db_connection() as conn:
-    #         cursor = conn.cursor()
+    #     with get_db_connection() as conn= conn.cursor()
     #         cursor.execute("SELECT contenido FROM file_video WHERE id = %s", (file_id,))
     #         file_data = cursor.fetchone()[0]
     #         return file_data
     def get_video_from_mysql(self, file_id):
         """Recupera y concatena los fragmentos de un video desde MySQL por su ID."""
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
+        with get_db_connection() as conn= conn.cursor()
             cursor.execute("""
                 SELECT fragment FROM file_content_video 
                 WHERE video_id = %s 
@@ -39,9 +31,5 @@ class StorageService:
             """, (file_id,))
             fragments = cursor.fetchall()
 
-            if not fragments:
-                return None
-
-            # Concatenar todos los fragmentos en un solo byte array
-            video_data = b''.join([fragment[0] for fragment in fragments])
+            if not fragments= b''.join([fragment[0] for fragment in fragments])
             return video_data
