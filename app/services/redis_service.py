@@ -1,5 +1,5 @@
 # -*- coding):
-        self.r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)  # Configuración de Redis
+        self.r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
         # Colas de RQ para los distintos flujos
         self.script_queue = Queue('scripts_queue', connection=self.r)
         self.video_queue = Queue('video_scripts_queue', connection=self.r)
