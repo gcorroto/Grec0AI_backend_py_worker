@@ -13,7 +13,7 @@ def script_worker(redis_service, script_service):
         script_data = redis_service.get_next_script()
         if script_data:
             script_id, script_content = script_data
-            print(f"Procesando script {script_id} con contenido: {script_content}")
+            print("Procesando script {} con contenido: {}".format(script_id, script_content))
             script_service.process_script(script_content, script_id)
         else:
             time.sleep(1)
@@ -25,7 +25,7 @@ def video_worker(redis_service, video_audio_service):
         video_script_data = redis_service.get_next_video_script()
         if video_script_data:
             script_id, script_content, video_id = video_script_data
-            print(f"Procesando script de video {script_id} con contenido: {script_content} y video id: {video_id}")
+            print("Procesando script de video {} con contenido: {} y video id: {}".format(script_id, script_content, video_id))
             video_audio_service.process_video_conversion(script_content, script_id, video_id)
         else:
             time.sleep(1)
@@ -37,7 +37,7 @@ def frames_worker(redis_service, frames_storage_service):
         frames_script_data = redis_service.get_next_frames_script()
         if frames_script_data:
             script_id, script_content, video_id = frames_script_data
-            print(f"Procesando script de frames {script_id} con contenido: {script_content} y video id: {video_id}")
+            print("Procesando script de frames {} con contenido: {} y video id: {}".format(script_id, script_content, video_id))
             frames_storage_service.process_video_to_frames(script_content, script_id, video_id)
         else:
             time.sleep(1)
@@ -48,7 +48,7 @@ def metadata_worker(redis_service, metadata_storage_service):
         metadata_script_data = redis_service.get_next_metadata_script()
         if metadata_script_data:
             script_id, script_content, video_id = metadata_script_data
-            print(f"Procesando script de metadatos {script_id} con contenido: {script_content} y video id: {video_id}")
+            print("Procesando script de metadatos {} con contenido: {} y video id: {}".format(script_id, script_content, video_id))
             metadata_storage_service.process_video_metadata(script_content, script_id, video_id)
         else:
             time.sleep(1)
