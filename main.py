@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import threading
 import time
 from app.services.redis_service import RedisService
