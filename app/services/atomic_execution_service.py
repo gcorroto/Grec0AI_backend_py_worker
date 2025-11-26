@@ -42,8 +42,7 @@ class AtomicExecutionService:
             self.redis_service.update_status("step_status_{}".format(step_token), "FAILED")
             return
         
-        # Actualizar estado a EXECUTING
-        self.redis_service.update_status("step_status_{}".format(step_token), "EXECUTING")
+        # NO actualizar a EXECUTING aquí porque Java espera solo un valor final (SUCCESS o FAILED)
         print("→ Ejecutando paso {} de traza {} en contenedor {}".format(step_number, trace_token, container_type))
         
         # Generar nombre único para el script temporal
