@@ -6,6 +6,7 @@ from app.services.script_service import ScriptService
 from app.services.video_audio_service import VideoAudioService
 from app.services.frames_storage_service import FramesStorageService
 from app.services.metadata_storage_service import MetadataStorageService
+from app.services.atomic_execution_service import AtomicExecutionService
 
 def script_worker(redis_service, script_service):
     print("Iniciando worker de scripts para generar imagenes...")
@@ -54,6 +55,19 @@ def metadata_worker(redis_service, metadata_storage_service):
         else:
             time.sleep(1)
 
+def atomic_execution_worker(redis_service, atomic_execution_service):
+    """Worker para ejecución atómica GREC0AI"""
+    print("Iniciando worker de ejecución atómica GREC0AI...")
+    while True:
+        atomic_data = redis_service.get_next_atomic_step()
+        if atomic_data:
+            step_token, step_number, encoded_code, container_type = atomic_data
+            print("Ejecutando paso atómico {} de traza {}".format(step_number, step_token))
+            atomic_execution_service.process_atomic_step(step_token, step_number, encoded_code, container_type)
+        else:
+            time.sleep(0.5)
+
+
 def main():
     # Inicialización de servicios
     redis_service = RedisService()
@@ -61,24 +75,31 @@ def main():
     video_audio_service = VideoAudioService(redis_service)
     frames_storage_service = FramesStorageService(redis_service)
     metadata_storage_service = MetadataStorageService(redis_service)
+    atomic_execution_service = AtomicExecutionService(redis_service, script_service.storage_service)
     
     # Crear hilos para cada flujo
     thread_scripts = threading.Thread(target=script_worker, args=(redis_service, script_service))
     thread_video = threading.Thread(target=video_worker, args=(redis_service, video_audio_service))
     thread_frames = threading.Thread(target=frames_worker, args=(redis_service, frames_storage_service))
     thread_metadata = threading.Thread(target=metadata_worker, args=(redis_service, metadata_storage_service))
+    thread_atomic = threading.Thread(target=atomic_execution_worker, args=(redis_service, atomic_execution_service))
     
     # Iniciar los hilos
     thread_scripts.start()
     thread_video.start()
     thread_frames.start()
     thread_metadata.start()
+    thread_atomic.start()
+    
+    print("✓ Todos los workers iniciados (incluyendo GREC0AI atomic execution)")
     
     # Espera a que ambos hilos sigan ejecutándose (en este caso, son loops infinitos)
     thread_scripts.join()
     thread_video.join()
     thread_frames.join()
     thread_metadata.join()
+    thread_atomic.join()
+
 
 if __name__ == "__main__":
     main()

@@ -48,6 +48,7 @@ class RedisService:
             if len(parts) == 3:
                 return parts
         return None
+
     def get_next_metadata_script(self):
         """
         Obtiene el siguiente mensaje de la cola en Redis para la extraccion de metadatos.
@@ -108,3 +109,18 @@ class RedisService:
         self.frontend_queue.enqueue(
             rq_tasks.deploy_frontend_from_code_task, code, deployment_id, port, npm
         )
+    
+    def get_next_atomic_step(self):
+        """
+        Obtiene el siguiente paso atómico de la cola GREC0AI.
+        Formato esperado: "step_token:step_number:encoded_code:container_type"
+        """
+        atomic_data = self.r.blpop("atomic_execution_queue", timeout=0)
+        if atomic_data:
+            decoded_data = atomic_data[1].decode("utf-8")
+            # Separar en 4 partes
+            parts = decoded_data.split(":", 3)
+            if len(parts) == 4:
+                step_token, step_number, encoded_code, container_type = parts
+                return step_token, int(step_number), encoded_code, container_type
+        return None
