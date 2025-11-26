@@ -113,17 +113,31 @@ class RedisService:
     def get_next_atomic_step(self):
         """
         Obtiene el siguiente paso atómico de la cola GREC0AI.
-        Formato esperado: "traceToken:step:N:encoded_code:container_type"
+        Formato esperado: "stepToken:encoded_code:container_type"
+        donde stepToken = "traceToken:step:N"
         """
         atomic_data = self.r.blpop("atomic_execution_queue", timeout=0)
         if atomic_data:
             decoded_data = atomic_data[1].decode("utf-8")
-            # Formato: "traceToken:step:N:encoded_code:container_type"
-            # Separamos en máximo 5 partes
-            parts = decoded_data.split(":", 4)
-            if len(parts) == 5:
-                trace_token, step_word, step_number, encoded_code, container_type = parts
-                # Reconstruir el step_token completo: "traceToken:step:N"
-                step_token = "{}:{}:{}".format(trace_token, step_word, step_number)
-                return step_token, int(step_number), encoded_code, container_type
+            
+            # DEBUG: mostrar mensaje completo
+            print("=== DEBUG Redis Message ===")
+            print("Longitud total: {} caracteres".format(len(decoded_data)))
+            print("Primeros 200 chars: {}".format(decoded_data[:200]))
+            
+            # Formato: "UUID:step:N:encodedCode:containerType"
+            # Separar en máximo 3 partes: [stepToken completo, encodedCode, containerType]
+            # El stepToken puede contener ":" internamente (UUID:step:N)
+            # Así que dividimos desde el FINAL
+            parts = decoded_data.rsplit(":", 2)
+            
+            print("Número de partes después de rsplit: {}".format(len(parts)))
+            for i, part in enumerate(parts):
+                print("Parte {}: {} caracteres".format(i, len(part)))
+            
+            if len(parts) == 3:
+                step_token, encoded_code, container_type = parts
+                # Extraer el número de paso del stepToken
+                step_number = int(step_token.split(":")[-1])
+                return step_token, step_number, encoded_code, container_type
         return None

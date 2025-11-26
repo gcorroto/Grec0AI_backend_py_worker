@@ -45,8 +45,8 @@ class AtomicExecutionService:
         
         # 2. Ejecutar código con contexto
         try:
-            self.redis_service.update_status(f"step_status_{step_token}", "EXECUTING")
-            print(f"→ Ejecutando paso {step_number} de traza {trace_token}")
+            self.redis_service.update_status("step_status_{}".format(step_token), "EXECUTING")
+            print("→ Ejecutando paso {} de traza {}".format(step_number, trace_token))
             
             result = self.execute_code_with_context(code, context, container_type)
             
@@ -54,17 +54,27 @@ class AtomicExecutionService:
             self.execution_contexts[trace_token] = result['namespace']
             
             # 4. Reportar resultado
-            self.redis_service.push_result(f"step_output_{step_token}", result['output'])
-            self.redis_service.push_result(f"step_context_{step_token}", json.dumps(result['namespace']))
-            self.redis_service.update_status(f"step_status_{step_token}", "SUCCESS")
+            output_key = "step_output_{}".format(step_token)
+            context_key = "step_context_{}".format(step_token)
+            status_key = "step_status_{}".format(step_token)
             
-            print(f"✓ Paso {step_number} completado exitosamente")
+            print("→ Escribiendo resultados en Redis:")
+            print("   Output key: {}".format(output_key))
+            print("   Context key: {}".format(context_key))
+            print("   Status key: {}".format(status_key))
+            
+            self.redis_service.push_result(output_key, result['output'])
+            self.redis_service.push_result(context_key, json.dumps(result['namespace']))
+            self.redis_service.update_status(status_key, "SUCCESS")
+            
+            print("✓ Paso {} completado exitosamente".format(step_number))
+            print("✓ Resultados escritos en Redis")
             
         except Exception as e:
-            error_msg = f"Error en paso {step_number}: {str(e)}"
-            print(f"✗ {error_msg}")
-            self.redis_service.push_result(f"step_output_{step_token}", error_msg)
-            self.redis_service.update_status(f"step_status_{step_token}", "FAILED")
+            error_msg = "Error en paso {}: {}".format(step_number, str(e))
+            print("✗ {}".format(error_msg))
+            self.redis_service.push_result("step_output_{}".format(step_token), error_msg)
+            self.redis_service.update_status("step_status_{}".format(step_token), "FAILED")
     
     def execute_code_with_context(self, code, context, container_type):
         """
@@ -87,7 +97,7 @@ class AtomicExecutionService:
                 # Capturar el error pero incluir el traceback
                 import traceback
                 error_details = traceback.format_exc()
-                raise Exception(f"{str(e)}\n\nTraceback:\n{error_details}")
+                raise Exception("{}\n\nTraceback:\n{}".format(str(e), error_details))
         
         # Extraer solo variables nuevas (no built-ins, no imports de sistema)
         new_vars = {
@@ -120,10 +130,10 @@ class AtomicExecutionService:
                     serialized[key] = base64.b64encode(value).decode('utf-8')
                 else:
                     # Para objetos complejos, guardar representación string
-                    serialized[key] = f"<{type(value).__name__}>"
+                    serialized[key] = "<{}>".format(type(value).__name__)
             except Exception as e:
-                print(f"Warning: No se pudo serializar variable '{key}': {str(e)}")
-                serialized[key] = f"<unserializable: {type(value).__name__}>"
+                print("Warning: No se pudo serializar variable '{}': {}".format(key, str(e)))
+                serialized[key] = "<unserializable: {}>".format(type(value).__name__)
         
         return serialized
     
@@ -131,5 +141,5 @@ class AtomicExecutionService:
         """Limpia el contexto de una traza completada"""
         if trace_token in self.execution_contexts:
             del self.execution_contexts[trace_token]
-            print(f"Contexto de traza {trace_token} limpiado")
+            print("Contexto de traza {} limpiado".format(trace_token))
 
