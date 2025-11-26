@@ -1,4 +1,12 @@
-# -*- coding= RedisService()
+# -*- coding: utf-8 -*-
+from app.services.script_service import ScriptService
+from app.services.video_audio_service import VideoAudioService
+from app.services.frames_storage_service import FramesStorageService
+from app.services.metadata_storage_service import MetadataStorageService
+from app.services.frontend_service import FrontendService
+from app.services.redis_service import RedisService
+
+redis_service = RedisService()
 script_service = ScriptService(redis_service)
 video_audio_service = VideoAudioService(redis_service)
 frames_storage_service = FramesStorageService(redis_service)

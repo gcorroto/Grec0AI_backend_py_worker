@@ -77,24 +77,24 @@ class RedisService:
         self.r.rpush("results_queue_{}".format(script_id), result)
 
     # --- Métodos para usar RQ ---
-    def enqueue_script(self, script_id: str, script_content: str):
+    def enqueue_script(self, script_id, script_content):
         """Encola la ejecución de un script como trabajo de RQ."""
         self.script_queue.enqueue(rq_tasks.process_script_task, script_id, script_content)
 
-    def enqueue_graphviz(self, script_id: str, graphviz_content: str):
+    def enqueue_graphviz(self, script_id, graphviz_content):
         """Encola la renderización de contenido Graphviz como trabajo de RQ."""
         # Reuses the same script queue since ScriptService now handles both types
         self.script_queue.enqueue(rq_tasks.process_script_task, script_id, graphviz_content)
 
-    def enqueue_video_conversion(self, script_id: str, script_content: str, video_id: str):
+    def enqueue_video_conversion(self, script_id, script_content, video_id):
         """Encola la conversión de video a audio."""
         self.video_queue.enqueue(rq_tasks.process_video_task, script_id, script_content, video_id)
 
-    def enqueue_frames_extraction(self, script_id: str, script_content: str, video_id: str):
+    def enqueue_frames_extraction(self, script_id, script_content, video_id):
         """Encola la extracción de frames de un video."""
         self.frames_queue.enqueue(rq_tasks.process_frames_task, script_id, script_content, video_id)
 
-    def enqueue_metadata_extraction(self, script_id: str, script_content: str, video_id: str):
+    def enqueue_metadata_extraction(self, script_id, script_content, video_id):
         """Encola la extracción de metadatos de un video."""
         self.metadata_queue.enqueue(rq_tasks.process_metadata_task, script_id, script_content, video_id)
 
