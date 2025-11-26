@@ -113,14 +113,17 @@ class RedisService:
     def get_next_atomic_step(self):
         """
         Obtiene el siguiente paso atómico de la cola GREC0AI.
-        Formato esperado: "step_token:step_number:encoded_code:container_type"
+        Formato esperado: "traceToken:step:N:encoded_code:container_type"
         """
         atomic_data = self.r.blpop("atomic_execution_queue", timeout=0)
         if atomic_data:
             decoded_data = atomic_data[1].decode("utf-8")
-            # Separar en 4 partes
-            parts = decoded_data.split(":", 3)
-            if len(parts) == 4:
-                step_token, step_number, encoded_code, container_type = parts
+            # Formato: "traceToken:step:N:encoded_code:container_type"
+            # Separamos en máximo 5 partes
+            parts = decoded_data.split(":", 4)
+            if len(parts) == 5:
+                trace_token, step_word, step_number, encoded_code, container_type = parts
+                # Reconstruir el step_token completo: "traceToken:step:N"
+                step_token = "{}:{}:{}".format(trace_token, step_word, step_number)
                 return step_token, int(step_number), encoded_code, container_type
         return None
