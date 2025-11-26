@@ -25,14 +25,19 @@ class AtomicExecutionService:
         """
         trace_token = step_token.split(":step:")[0]
         
+        # Debug: mostrar longitud del código codificado
+        print("Longitud encoded_code: {} caracteres".format(len(encoded_code)))
+        print("Primeros 50 chars: {}".format(encoded_code[:50]))
+        
         # Decodificar código
         try:
             code = base64.b64decode(encoded_code).decode('utf-8')
         except Exception as e:
-            error_msg = f"Error decodificando código del paso {step_number}: {str(e)}"
+            error_msg = "Error decodificando código del paso {}: {}".format(step_number, str(e))
             print(error_msg)
-            self.redis_service.push_result(f"step_output_{step_token}", error_msg)
-            self.redis_service.update_status(f"step_status_{step_token}", "FAILED")
+            print("Encoded_code recibido: {}".format(encoded_code))
+            self.redis_service.push_result("step_output_{}".format(step_token), error_msg)
+            self.redis_service.update_status("step_status_{}".format(step_token), "FAILED")
             return
         
         # 1. Recuperar contexto de pasos previos
