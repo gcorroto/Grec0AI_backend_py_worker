@@ -1,7 +1,15 @@
-# -*- coding= os.path.abspath("/scripts")
+# -*- coding: utf-8 -*-
+import os
+import subprocess
+import time
+import uuid
+from app.services.storage_service import StorageService
+
+SCRIPTS_DIR = os.path.abspath("/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
-class VideoAudioService, redis_service):
+class VideoAudioService:
+    def __init__(self, redis_service):
         self.redis_service = redis_service
         self.storage_service = StorageService()
 
@@ -18,7 +26,7 @@ class VideoAudioService, redis_service):
         current_dir = os.getcwd()
         unique_id = "{}_{}_{}".format(script_id, int(time.time()), uuid.uuid4().hex)
 
-         # Definir nombres para el video de entrada y el audio de salida
+        # Definir nombres para el video de entrada y el audio de salida
         input_video_name = "input_{}".format(unique_id)  # sin extensión
         output_audio_name = "output_{}".format(unique_id)  # sin extensión
         
@@ -33,19 +41,25 @@ class VideoAudioService, redis_service):
         script_file_name = "temp_script_{}.py".format(unique_id)
         script_path = os.path.join(SCRIPTS_DIR, script_file_name)
 
-        try, 'w', encoding='utf-8') as f)
+        try:
+            with open(script_path, 'w', encoding='utf-8') as f:
+                f.write(script_content)
             print("Script guardado en {}".format(script_path))
-        except Exception as e= "Error al guardar el script))
+        except Exception as e:
+            error_message = "Error al guardar el script: {}".format(str(e))
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
             self.redis_service.update_status(script_id, 'failed')
             return
 
         # 3) Obtener el video desde MySQL
-        try= self.storage_service.get_video_from_mysql(video_id)
-            with open(input_video_path, 'wb') as f)
+        try:
+            video_data = self.storage_service.get_video_from_mysql(video_id)
+            with open(input_video_path, 'wb') as f:
+                f.write(video_data)
             print("Video guardado en {}".format(input_video_path))
-        except Exception as e= "Error al obtener video con ID {}: {}".format(video_id, str(e))
+        except Exception as e:
+            error_message = "Error al obtener video con ID {}: {}".format(video_id, str(e))
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
             self.redis_service.update_status(script_id, 'failed')
@@ -55,32 +69,36 @@ class VideoAudioService, redis_service):
             return
 
         # 4) Ejecutar el script dentro del contenedor Docker
-        try= subprocess.run([
+        try:
+            result = subprocess.run([
                 'docker', 'run', '--rm',
-                '-v', '{SCRIPTS_DIR}:/scripts',
+                '-v', '{}:/scripts'.format(SCRIPTS_DIR),
                 '-w', '/scripts',
-                'localhost,  # Imagen Docker que incluye Python y FFmpeg
-                'python', '/scripts/{script_file_name}'
+                'localhost:5000/python-ffmpeg',  # Imagen Docker que incluye Python y FFmpeg
+                'python', '/scripts/{}'.format(script_file_name)
             ], capture_output=True, text=True, check=True)
 
-            print("Script ejecutado con éxito))
+            print("Script ejecutado con éxito")
 
             # 5) Verificar si se generó el archivo de audio
             if os.path.exists(output_audio_path):
                 # Subir el archivo de audio a MySQL y obtener un ID
                 file_id = self.storage_service.save_file_to_mysql(output_audio_path, 'audio')
-                self.redis_service.push_result(script_id, "file_id))
+                self.redis_service.push_result(script_id, "file_id:{}".format(file_id))
                 os.remove(output_audio_path)
-            else, mandamos el stdout como info
+            else:
+                # Si no hay archivo, mandamos el stdout como info
                 self.redis_service.push_result(script_id, "No se encontró {}. {}".format(output_audio_name, result.stdout))
 
             # Actualizar estado a completado
             self.redis_service.update_status(script_id, 'completed')
-        except subprocess.CalledProcessError as e= "Error al ejecutar el script)
+        except subprocess.CalledProcessError as e:
+            error_message = "Error al ejecutar el script: {}".format(e.stderr)
             print(error_message)
             self.redis_service.push_result(script_id, error_message)
             self.redis_service.update_status(script_id, 'failed')
-        finally):
+        finally:
+            if os.path.exists(input_video_path):
                 os.remove(input_video_path)
             if os.path.exists(script_path):
                 os.remove(script_path)
