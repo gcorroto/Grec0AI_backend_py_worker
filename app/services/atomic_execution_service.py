@@ -56,6 +56,9 @@ class AtomicExecutionService:
             with open(script_path, 'w', encoding='utf-8') as f:
                 f.write(code)
             print("Script guardado en {}".format(script_path))
+            print("=== CÓDIGO A EJECUTAR ===")
+            print(code)
+            print("=== FIN CÓDIGO ===")
         except Exception as e:
             error_msg = "Error al guardar script del paso {}: {}".format(step_number, str(e))
             print(error_msg)
