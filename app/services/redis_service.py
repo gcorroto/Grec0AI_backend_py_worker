@@ -63,18 +63,30 @@ class RedisService:
                 return parts
         return None
 
-    def update_status(self, script_id, status):
+    def update_status(self, key_or_id, status):
         """Actualiza el estado del script en Redis."""
-        key = "script_status_{}".format(script_id)
+        # Si ya es una clave completa (contiene "_"), usar tal cual
+        if "step_status_" in key_or_id or "script_status_" in key_or_id:
+            key = key_or_id
+        else:
+            key = "script_status_{}".format(key_or_id)
+            
         if self.r.exists(key):
             key_type = self.r.type(key)
             if key_type != b'list':
                 self.r.delete(key)
         self.r.rpush(key, status)
+        print("Redis WRITE: {} = {}".format(key, status))
 
-    def push_result(self, script_id, result):
+    def push_result(self, key_or_id, result):
         """Envía el resultado del script a Redis."""
-        self.r.rpush("results_queue_{}".format(script_id), result)
+        # Si ya es una clave completa (contiene prefijos conocidos), usar tal cual
+        if "step_output_" in key_or_id or "step_context_" in key_or_id or "results_queue_" in key_or_id:
+            key = key_or_id
+        else:
+            key = "results_queue_{}".format(key_or_id)
+        self.r.rpush(key, result)
+        print("Redis WRITE: {} = {} chars".format(key, len(str(result))))
 
     # --- Métodos para usar RQ ---
     def enqueue_script(self, script_id, script_content):
