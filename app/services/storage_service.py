@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import uuid
-from app.database import get_db_connection
+from app.utils.database import get_db_connection
 
 class StorageService:
     def save_file_to_mysql(self, file_path, file_type):
