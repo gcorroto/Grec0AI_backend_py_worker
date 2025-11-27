@@ -70,7 +70,10 @@ class ScriptService:
 
             if os.path.exists(output_file):
                 # Subir el archivo binario a MySQL
-                file_id = self.storage_service.save_file_to_mysql(output_file)
+                # Detectar tipo basado en extensión
+                file_extension = os.path.splitext(output_file)[1].lower()
+                file_type = 'image' if file_extension in ['.png', '.jpg', '.jpeg', '.gif'] else 'binary'
+                file_id = self.storage_service.save_file_to_mysql(output_file, file_type)
                 
                 # Enviar la referencia del archivo a Redis
                 self.redis_service.push_result(script_id, f"Archivo guardado con ID: {file_id}")
