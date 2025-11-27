@@ -5,7 +5,8 @@ from app.utils.database import get_db_connection
 
 class StorageService:
     def save_file_to_mysql(self, file_path, file_type):
-        """Guarda el archivo en MySQL como binario y retorna su ID."""
+        """Guarda el archivo en MySQL como binario y retorna su UUID."""
+        file_uuid = self.generate_uuid()
         with get_db_connection() as conn:
             cursor = conn.cursor()
             with open(file_path, 'rb') as file:
@@ -13,9 +14,9 @@ class StorageService:
                 cursor.execute("""
                     INSERT INTO file_script_content (uuid, nombre, contenido, type)
                     VALUES (%s, %s, %s, %s)
-                """, (self.generate_uuid(), os.path.basename(file_path), binary_data, file_type))
+                """, (file_uuid, os.path.basename(file_path), binary_data, file_type))
                 conn.commit()
-                return cursor.lastrowid
+                return file_uuid
 
     @staticmethod
     def generate_uuid():
