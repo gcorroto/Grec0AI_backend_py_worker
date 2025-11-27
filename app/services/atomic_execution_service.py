@@ -41,6 +41,38 @@ class AtomicExecutionService:
         
         return generated_files
     
+    def _detect_file_type(self, file_path):
+        """
+        Detecta el tipo de archivo basándose en su extensión
+        
+        Args:
+            file_path: Ruta del archivo
+        
+        Returns:
+            Tipo de archivo como string ('image', 'audio', 'video', 'text', etc.)
+        """
+        extension = os.path.splitext(file_path)[1].lower()
+        
+        # Mapeo de extensiones a tipos
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico']
+        audio_extensions = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']
+        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv']
+        text_extensions = ['.txt', '.log', '.md', '.json', '.xml', '.csv', '.tsv']
+        document_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx']
+        
+        if extension in image_extensions:
+            return 'image'
+        elif extension in audio_extensions:
+            return 'audio'
+        elif extension in video_extensions:
+            return 'video'
+        elif extension in text_extensions:
+            return 'text'
+        elif extension in document_extensions:
+            return 'document'
+        else:
+            return 'binary'  # Tipo genérico para archivos desconocidos
+    
     def process_atomic_step(self, step_token, step_number, encoded_code, container_type):
         """
         Procesa un paso atómico de ejecución GREC0AI ejecutando el código en un contenedor Docker
@@ -125,9 +157,12 @@ class AtomicExecutionService:
                 print("→ Archivos generados detectados: {}".format(generated_files))
                 for file_path in generated_files:
                     try:
-                        file_id = self.storage_service.save_file_to_mysql(file_path)
                         file_name = os.path.basename(file_path)
-                        output += "\n[ARCHIVO_GENERADO] {} -> ID: {}".format(file_name, file_id)
+                        file_type = self._detect_file_type(file_path)
+                        print("   → Guardando {} (tipo: {})".format(file_name, file_type))
+                        
+                        file_id = self.storage_service.save_file_to_mysql(file_path, file_type)
+                        output += "\n[ARCHIVO_GENERADO] {} (tipo: {}) -> ID: {}".format(file_name, file_type, file_id)
                         print("   ✓ Archivo {} guardado con ID: {}".format(file_name, file_id))
                         # Limpiar archivo después de guardarlo
                         os.remove(file_path)
