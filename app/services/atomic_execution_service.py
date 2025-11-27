@@ -15,6 +15,32 @@ class AtomicExecutionService:
         self.redis_service = redis_service
         self.storage_service = storage_service
     
+    def _find_generated_files(self, scripts_dir, script_name):
+        """
+        Busca archivos generados en el directorio de scripts, excluyendo el script temporal
+        
+        Args:
+            scripts_dir: Directorio donde se ejecutó el script
+            script_name: Nombre del script temporal a excluir
+        
+        Returns:
+            Lista de rutas de archivos generados
+        """
+        generated_files = []
+        try:
+            for filename in os.listdir(scripts_dir):
+                file_path = os.path.join(scripts_dir, filename)
+                # Excluir el script temporal y directorios
+                if filename != script_name and os.path.isfile(file_path):
+                    # Excluir archivos .py (scripts)
+                    if not filename.endswith('.py'):
+                        generated_files.append(file_path)
+                        print("   → Archivo detectado: {}".format(filename))
+        except Exception as e:
+            print("Error buscando archivos generados: {}".format(str(e)))
+        
+        return generated_files
+    
     def process_atomic_step(self, step_token, step_number, encoded_code, container_type):
         """
         Procesa un paso atómico de ejecución GREC0AI ejecutando el código en un contenedor Docker
@@ -80,6 +106,9 @@ class AtomicExecutionService:
             
             print("✓ Script ejecutado con éxito en contenedor {}".format(container_type))
             
+            # Buscar archivos generados en el directorio de scripts
+            generated_files = self._find_generated_files(SCRIPTS_DIR, script_file_name)
+            
             # Reportar resultados en Redis
             output_key = "step_output_{}".format(step_token)
             status_key = "step_status_{}".format(step_token)
@@ -90,6 +119,21 @@ class AtomicExecutionService:
             
             # El output es la salida estándar del script
             output = result.stdout if result.stdout else "Ejecución completada sin salida"
+            
+            # Si hay archivos generados, guardarlos en la BD
+            if generated_files:
+                print("→ Archivos generados detectados: {}".format(generated_files))
+                for file_path in generated_files:
+                    try:
+                        file_id = self.storage_service.save_file_to_mysql(file_path)
+                        file_name = os.path.basename(file_path)
+                        output += "\n[ARCHIVO_GENERADO] {} -> ID: {}".format(file_name, file_id)
+                        print("   ✓ Archivo {} guardado con ID: {}".format(file_name, file_id))
+                        # Limpiar archivo después de guardarlo
+                        os.remove(file_path)
+                    except Exception as e:
+                        print("   ✗ Error guardando archivo {}: {}".format(file_path, str(e)))
+            
             self.redis_service.push_result(output_key, output)
             self.redis_service.update_status(status_key, "SUCCESS")
             
