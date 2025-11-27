@@ -162,12 +162,21 @@ class AtomicExecutionService:
                         print("   → Guardando {} (tipo: {})".format(file_name, file_type))
                         
                         file_id = self.storage_service.save_file_to_mysql(file_path, file_type)
+                        
+                        # DEBUG: Verificar qué devolvió
+                        if file_id is None:
+                            print("   ✗ ERROR: save_file_to_mysql devolvió None")
+                            import traceback
+                            traceback.print_stack()
+                        
                         output += "\n[ARCHIVO_GENERADO] {} (tipo: {}) -> ID: {}".format(file_name, file_type, file_id)
                         print("   ✓ Archivo {} guardado con ID: {}".format(file_name, file_id))
                         # Limpiar archivo después de guardarlo
                         os.remove(file_path)
                     except Exception as e:
                         print("   ✗ Error guardando archivo {}: {}".format(file_path, str(e)))
+                        import traceback
+                        traceback.print_exc()
             
             self.redis_service.push_result(output_key, output)
             self.redis_service.update_status(status_key, "SUCCESS")
