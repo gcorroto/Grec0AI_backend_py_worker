@@ -58,7 +58,7 @@ def run_container(
     except subprocess.TimeoutExpired as exc:
         return CommandRunResult(
             stdout=str(exc.stdout or ""),
-            stderr="Timeout ejecutando contenedor",
+            stderr="Timeout executing container",
             returncode=124,
             command=docker_command,
         )
@@ -91,7 +91,7 @@ def run_local(
     except subprocess.TimeoutExpired as exc:
         return CommandRunResult(
             stdout=str(exc.stdout or ""),
-            stderr="Timeout ejecutando comando local",
+            stderr="Timeout executing local command",
             returncode=124,
             command=command,
         )

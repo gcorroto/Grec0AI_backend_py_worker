@@ -70,7 +70,9 @@ class AgentAdapter:
         extra_args: Optional[List[str]] = None,
     ) -> List[str]:
         if not self.cli_cmd:
-            raise ValueError("CLI command no configurado para el agente {}".format(self.agent_kind))
+            raise ValueError(
+                "CLI command not configured for agent {}".format(self.agent_kind)
+            )
         command = self._parse_command(self.cli_cmd)
         if action:
             command.append(action)

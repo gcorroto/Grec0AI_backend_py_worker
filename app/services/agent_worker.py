@@ -19,9 +19,9 @@ def _read_int_env(env_key: str, default: int) -> int:
     try:
         return int(raw_value)
     except ValueError as exc:
-        raise ValueError(
-            "Valor inválido para {}: {}".format(env_key, raw_value)
-        ) from exc
+            raise ValueError(
+                "Invalid value for {}: {}".format(env_key, raw_value)
+            ) from exc
 
 
 DEFAULT_MAX_RETRIES = _read_int_env("AGENT_MAX_RETRIES", 2)
@@ -40,11 +40,11 @@ class AgentTask:
     @classmethod
     def from_dict(cls, payload: Dict[str, Any]) -> "AgentTask":
         if not payload:
-            raise ValueError("Payload de agente vacío")
+            raise ValueError("Empty agent payload")
         agent_kind = payload.get("agent_kind")
         project_path = payload.get("project_path")
         if not agent_kind or not project_path:
-            raise ValueError("agent_kind y project_path son requeridos")
+            raise ValueError("agent_kind and project_path are required")
         artifacts = cls._normalize_artifacts(payload.get("artifacts"))
         spec_md_content = payload.get("spec_md_content")
         if spec_md_content is not None and "spec.md" not in artifacts:
@@ -166,13 +166,13 @@ class AgentWorker:
     def _validate_task(self, task: AgentTask) -> None:
         if not os.path.isdir(task.project_path):
             raise FileNotFoundError(
-                "project_path no existe: {}".format(task.project_path)
+                "project_path does not exist: {}".format(task.project_path)
             )
 
     def _get_adapter(self, agent_kind: str) -> AgentAdapter:
         adapter_cls = self.adapters.get(agent_kind)
         if not adapter_cls:
-            raise ValueError("Agente no soportado: {}".format(agent_kind))
+            raise ValueError("Unsupported agent: {}".format(agent_kind))
         return adapter_cls()
 
     def _run_action(self, adapter: AgentAdapter, task: AgentTask, spec_path: Optional[str]):
@@ -247,11 +247,11 @@ class AgentWorker:
         full_path = os.path.abspath(os.path.join(root, normalized))
         root_path = os.path.abspath(root)
         if full_path == root_path:
-            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
+            raise ValueError("Invalid artifact path: {}".format(relative_path))
         try:
             common_path = os.path.commonpath([root_path, full_path])
         except ValueError as exc:
-            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path)) from exc
+            raise ValueError("Invalid artifact path: {}".format(relative_path)) from exc
         if common_path != root_path:
-            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
+            raise ValueError("Invalid artifact path: {}".format(relative_path))
         return full_path
