@@ -12,7 +12,19 @@ from app.services.agent_adapters import (
     GeminiAdapter,
 )
 
-DEFAULT_MAX_RETRIES = int(os.getenv("AGENT_MAX_RETRIES", "2"))
+def _read_int_env(env_key: str, default: int) -> int:
+    raw_value = os.getenv(env_key)
+    if raw_value is None:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError as exc:
+        raise ValueError(
+            "Valor inválido para {}: {}".format(env_key, raw_value)
+        ) from exc
+
+
+DEFAULT_MAX_RETRIES = _read_int_env("AGENT_MAX_RETRIES", 2)
 
 
 @dataclass
