@@ -232,6 +232,8 @@ class AgentWorker:
         normalized = os.path.normpath(relative_path).lstrip(os.sep)
         full_path = os.path.abspath(os.path.join(root, normalized))
         root_path = os.path.abspath(root)
-        if full_path == root_path or full_path.startswith(root_path + os.sep):
-            return full_path
-        raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
+        if full_path == root_path:
+            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
+        if os.path.commonpath([root_path, full_path]) != root_path:
+            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
+        return full_path

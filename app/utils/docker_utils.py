@@ -48,12 +48,20 @@ def run_container(
         docker_command.extend(["-w", workdir])
     docker_command.append(image)
     docker_command.extend(command)
-    result = subprocess.run(
-        docker_command,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
+    try:
+        result = subprocess.run(
+            docker_command,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return CommandRunResult(
+            stdout=str(exc.stdout or ""),
+            stderr="Timeout ejecutando contenedor",
+            returncode=124,
+            command=docker_command,
+        )
     return CommandRunResult(
         stdout=result.stdout,
         stderr=result.stderr,
@@ -71,14 +79,22 @@ def run_local(
     env = os.environ.copy()
     if env_vars:
         env.update({key: str(value) for key, value in env_vars.items() if value is not None})
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        cwd=workdir,
-        env=env,
-    )
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=workdir,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return CommandRunResult(
+            stdout=str(exc.stdout or ""),
+            stderr="Timeout ejecutando comando local",
+            returncode=124,
+            command=command,
+        )
     return CommandRunResult(
         stdout=result.stdout,
         stderr=result.stderr,

@@ -93,7 +93,7 @@ class RedisService:
 
     def get_next_agent_task(self):
         """Obtiene el siguiente trabajo de agentes CLI en formato JSON."""
-        task_data = self.r.blpop(self.agent_queue_name, timeout=0)
+        task_data = self.r.blpop(self.agent_queue_name, timeout=1)
         if task_data:
             decoded_data = task_data[1].decode("utf-8")
             return json.loads(decoded_data)

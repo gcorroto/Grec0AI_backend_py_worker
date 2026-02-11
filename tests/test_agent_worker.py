@@ -49,10 +49,10 @@ class AgentWorkerTests(unittest.TestCase):
             {
                 "agent_kind": "gemini",
                 "project_path": "/tmp/project",
-                "spec_md_content": "contenido",
+                "spec_md_content": "content",
             }
         )
-        self.assertEqual(task.artifacts["spec.md"], "contenido")
+        self.assertEqual(task.artifacts["spec.md"], "content")
 
     def test_process_agent_job_writes_artifacts(self):
         redis_service = FakeRedisService()
@@ -60,7 +60,7 @@ class AgentWorkerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             plan_path = os.path.join(temp_dir, "plan.md")
             with open(plan_path, "w", encoding="utf-8") as plan_file:
-                plan_file.write("plan actualizado")
+                plan_file.write("plan updated")
             job = {
                 "agent_kind": "gemini",
                 "project_path": temp_dir,
@@ -79,7 +79,7 @@ class AgentWorkerTests(unittest.TestCase):
         result = redis_service.results[0]
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["stdout"], "ok implement")
-        self.assertEqual(result["plan_md"], "plan actualizado")
+        self.assertEqual(result["plan_md"], "plan updated")
 
 
 if __name__ == "__main__":
