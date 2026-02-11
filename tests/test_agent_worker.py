@@ -31,6 +31,17 @@ class DummyAdapter:
         )
 
 
+class FailingAdapter:
+    @staticmethod
+    def implement(project_path, spec_path, params):
+        return docker_utils.CommandRunResult(
+            stdout="",
+            stderr="fail",
+            returncode=1,
+            command=["dummy", "implement", spec_path or ""],
+        )
+
+
 class FakeRedisService:
     def __init__(self):
         self.results = []
@@ -80,6 +91,34 @@ class AgentWorkerTests(unittest.TestCase):
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["stdout"], "ok implement")
         self.assertEqual(result["plan_md"], "plan updated")
+
+    def test_process_agent_job_retries_on_failure(self):
+        redis_service = FakeRedisService()
+        worker = AgentWorker(redis_service)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job = {
+                "agent_kind": "gemini",
+                "project_path": temp_dir,
+                "spec_md_content": "spec content",
+                "task_issue_id": "issue-2",
+                "params": {"action": "implement"},
+                "max_retries": 1,
+            }
+            with mock.patch.object(AgentWorker, "_get_adapter", return_value=FailingAdapter()):
+                with mock.patch.object(
+                    AgentWorker,
+                    "_collect_git_info",
+                    return_value={"diff": "", "status": "", "log": ""},
+                ):
+                    worker.process_agent_job(job)
+        self.assertEqual(len(redis_service.enqueued), 1)
+        self.assertEqual(redis_service.enqueued[0]["attempt"], 1)
+        self.assertTrue(redis_service.results[0]["retrying"])
+
+    def test_safe_join_rejects_traversal(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaises(ValueError):
+                AgentWorker._safe_join(temp_dir, "../etc/passwd")
 
 
 if __name__ == "__main__":

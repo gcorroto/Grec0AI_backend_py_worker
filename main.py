@@ -74,11 +74,17 @@ def agent_cli_worker(redis_service, agent_worker_service):
     while True:
         agent_job = redis_service.get_next_agent_task()
         if agent_job:
-            print("Procesando job de agente: {}".format(agent_job.get("agent_kind")))
+            agent_kind = agent_job.get("agent_kind")
+            task_issue_id = agent_job.get("task_issue_id")
+            print("Procesando job de agente: {}".format(agent_kind))
             try:
                 agent_worker_service.process_agent_job(agent_job)
             except Exception as exc:
-                print("Error procesando job de agente: {}".format(exc))
+                print(
+                    "Error procesando job de agente {} ({}): {}".format(
+                        agent_kind, task_issue_id, exc
+                    )
+                )
 
 def main():
     # Inicialización de servicios
