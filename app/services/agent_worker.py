@@ -12,6 +12,8 @@ from app.services.agent_adapters import (
     GeminiAdapter,
 )
 
+DEFAULT_MAX_RETRIES = int(os.getenv("AGENT_MAX_RETRIES", "2"))
+
 
 @dataclass
 class AgentTask:
@@ -38,7 +40,7 @@ class AgentTask:
         params = payload.get("params") or {}
         max_retries = payload.get("max_retries")
         if max_retries is None:
-            max_retries = int(os.getenv("AGENT_MAX_RETRIES", "0"))
+            max_retries = DEFAULT_MAX_RETRIES
         return cls(
             agent_kind=agent_kind,
             project_path=project_path,
@@ -234,6 +236,10 @@ class AgentWorker:
         root_path = os.path.abspath(root)
         if full_path == root_path:
             raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
-        if os.path.commonpath([root_path, full_path]) != root_path:
+        try:
+            common_path = os.path.commonpath([root_path, full_path])
+        except ValueError as exc:
+            raise ValueError("Ruta de artefacto inválida: {}".format(relative_path)) from exc
+        if common_path != root_path:
             raise ValueError("Ruta de artefacto inválida: {}".format(relative_path))
         return full_path

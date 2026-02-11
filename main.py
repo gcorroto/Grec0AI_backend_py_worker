@@ -76,8 +76,6 @@ def agent_cli_worker(redis_service, agent_worker_service):
         if agent_job:
             print("Procesando job de agente: {}".format(agent_job.get("agent_kind")))
             agent_worker_service.process_agent_job(agent_job)
-        else:
-            time.sleep(1)
 
 def main():
     # Inicialización de servicios
