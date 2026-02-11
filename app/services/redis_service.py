@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import redis
 from rq import Queue
 from app.services import rq_tasks
@@ -12,6 +13,8 @@ class RedisService:
         self.frames_queue = Queue('frames_scripts_queue', connection=self.r)
         self.metadata_queue = Queue('metadata_scripts_queue', connection=self.r)
         self.frontend_queue = Queue('frontend_queue', connection=self.r)
+        self.agent_queue_name = "agents_queue"
+        self.agent_results_queue_name = "agent_results_queue"
 
     def get_next_script(self):
         """Obtiene el siguiente script de la cola en Redis (flujo original)."""
@@ -87,6 +90,47 @@ class RedisService:
             key = "results_queue_{}".format(key_or_id)
         self.r.rpush(key, result)
         print("Redis WRITE: {} = {} chars".format(key, len(str(result))))
+
+    def get_next_agent_task(self):
+        """Obtiene el siguiente trabajo de agentes CLI en formato JSON."""
+        task_data = self.r.blpop(self.agent_queue_name, timeout=0)
+        if task_data:
+            decoded_data = task_data[1].decode("utf-8")
+            return json.loads(decoded_data)
+        return None
+
+    def enqueue_agent_task(
+        self,
+        task_issue_id,
+        agent_kind,
+        project_path,
+        spec_md_content,
+        artifacts=None,
+        params=None,
+        max_retries=None,
+    ):
+        """Encola un trabajo de agentes CLI."""
+        payload = {
+            "task_issue_id": task_issue_id,
+            "agent_kind": agent_kind,
+            "project_path": project_path,
+            "spec_md_content": spec_md_content,
+            "artifacts": artifacts or {},
+            "params": params or {},
+        }
+        if max_retries is not None:
+            payload["max_retries"] = max_retries
+        self.enqueue_agent_task_payload(payload)
+
+    def enqueue_agent_task_payload(self, payload):
+        """Encola un payload de agente ya construido."""
+        encoded_payload = json.dumps(payload, ensure_ascii=False)
+        self.r.rpush(self.agent_queue_name, encoded_payload)
+
+    def push_agent_result(self, result_payload):
+        """Publica resultados del agente en la cola de resultados."""
+        encoded_payload = json.dumps(result_payload, ensure_ascii=False)
+        self.r.rpush(self.agent_results_queue_name, encoded_payload)
 
     # --- Métodos para usar RQ ---
     def enqueue_script(self, script_id, script_content):

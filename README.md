@@ -278,6 +278,21 @@ MYSQL_DB=grec0ai_db
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_DB=0
+
+# Agent CLI Configuration (opcional)
+AGENT_KIND=gemini
+AGENT_CLI_CMD=gemini
+AGENT_SPEC_ARGS=--spec
+AGENT_DOCKER_IMAGE=gemini-cli:latest
+AGENT_USE_DOCKER=true
+AGENT_WORKDIR=/workspace
+AGENT_MAX_RETRIES=2
+
+# Overrides por agente (opcional)
+AGENT_GEMINI_CLI_CMD=gemini
+AGENT_CLAUDE_CLI_CMD=claude
+AGENT_CODEX_CLI_CMD=codex
+AGENT_COPILOT_CLI_CMD=copilot
 ```
 
 ### Contenedores Docker Requeridos
@@ -356,6 +371,14 @@ with open("my_app.tar.gz", "rb") as f:
     encoded = base64.b64encode(f.read()).decode("utf-8")
 redis_service.enqueue_frontend_deployment("deploy_002", encoded, npm=True)
 
+# Trabajo de agentes CLI (requiere main.py en ejecución)
+redis_service.enqueue_agent_task(
+    "issue_123",
+    "gemini",
+    "/ruta/al/proyecto",
+    "# spec.md content"
+)
+
 # Obtener la URL generada para cualquiera de los despliegues
 url = redis_service.r.blpop("results_queue_deploy_002")[1].decode("utf-8")
 print(url)
@@ -374,6 +397,8 @@ python main.py
 - `frames_scripts_queue`: Scripts para extracción de frames
 - `metadata_scripts_queue`: Scripts para extracción de metadatos
 - `frontend_queue`: Despliegue de frontends (HTML o proyectos npm)
+- `agents_queue`: Tareas para agentes CLI
+- `agent_results_queue`: Resultados de agentes CLI
 
 ## Especificaciones Técnicas
 
@@ -398,6 +423,19 @@ rq==1.15.1
 #### Video/Frames/Metadata Queues
 ```
 "script_id:script_content:video_id"
+```
+
+#### Agents Queue
+```json
+{
+  "task_issue_id": "issue_123",
+  "agent_kind": "gemini",
+  "project_path": "/ruta/al/proyecto",
+  "spec_md_content": "# spec.md",
+  "params": {
+    "action": "implement"
+  }
+}
 ```
 
 #### Estados de Procesamiento
