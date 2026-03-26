@@ -7,6 +7,7 @@ from app.services.video_audio_service import VideoAudioService
 from app.services.frames_storage_service import FramesStorageService
 from app.services.metadata_storage_service import MetadataStorageService
 from app.services.atomic_execution_service import AtomicExecutionService
+from app.services.agent_worker import AgentWorker
 
 def script_worker(redis_service, script_service):
     print("Iniciando worker de scripts para generar imagenes...")
@@ -67,6 +68,23 @@ def atomic_execution_worker(redis_service, atomic_execution_service):
         else:
             time.sleep(0.5)
 
+def agent_cli_worker(redis_service, agent_worker_service):
+    """Worker para agentes CLI (Gemini, Claude, Codex, Copilot, etc.)"""
+    print("Iniciando worker de agentes CLI...")
+    while True:
+        agent_job = redis_service.get_next_agent_task()
+        if agent_job:
+            agent_kind = agent_job.get("agent_kind")
+            task_issue_id = agent_job.get("task_issue_id")
+            print("Procesando job de agente: {}".format(agent_kind))
+            try:
+                agent_worker_service.process_agent_job(agent_job)
+            except Exception as exc:
+                print(
+                    "Error procesando job de agente {} ({}): {}".format(
+                        agent_kind, task_issue_id, exc
+                    )
+                )
 
 def main():
     # Inicialización de servicios
@@ -76,6 +94,7 @@ def main():
     frames_storage_service = FramesStorageService(redis_service)
     metadata_storage_service = MetadataStorageService(redis_service)
     atomic_execution_service = AtomicExecutionService(redis_service, script_service.storage_service)
+    agent_worker_service = AgentWorker(redis_service)
     
     # Crear hilos para cada flujo
     thread_scripts = threading.Thread(target=script_worker, args=(redis_service, script_service))
@@ -83,6 +102,7 @@ def main():
     thread_frames = threading.Thread(target=frames_worker, args=(redis_service, frames_storage_service))
     thread_metadata = threading.Thread(target=metadata_worker, args=(redis_service, metadata_storage_service))
     thread_atomic = threading.Thread(target=atomic_execution_worker, args=(redis_service, atomic_execution_service))
+    thread_agent = threading.Thread(target=agent_cli_worker, args=(redis_service, agent_worker_service))
     
     # Iniciar los hilos
     thread_scripts.start()
@@ -90,6 +110,7 @@ def main():
     thread_frames.start()
     thread_metadata.start()
     thread_atomic.start()
+    thread_agent.start()
     
     print("✓ Todos los workers iniciados (incluyendo GREC0AI atomic execution)")
     
@@ -99,6 +120,7 @@ def main():
     thread_frames.join()
     thread_metadata.join()
     thread_atomic.join()
+    thread_agent.join()
 
 
 if __name__ == "__main__":

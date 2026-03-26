@@ -146,6 +146,21 @@ MYSQL_DB=grec0ai
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_DB=0
+
+# Agent CLI Configuration (opcional)
+AGENT_KIND=gemini
+AGENT_CLI_CMD=gemini
+AGENT_SPEC_ARGS=--spec
+AGENT_DOCKER_IMAGE=gemini-cli:latest
+AGENT_USE_DOCKER=true
+AGENT_WORKDIR=/workspace
+AGENT_MAX_RETRIES=2
+
+# Overrides por agente (opcional)
+AGENT_GEMINI_CLI_CMD=gemini
+AGENT_CLAUDE_CLI_CMD=claude
+AGENT_CODEX_CLI_CMD=codex
+AGENT_COPILOT_CLI_CMD=copilot
 ```
 
 ### Ejecutar Workers
@@ -155,12 +170,113 @@ REDIS_DB=0
 python rq_worker.py
 ```
 
-**Modo Tradicional (Threaded):**
+2. Añade trabajos a las colas usando el RedisService:
+```python
+from app.services.redis_service import RedisService
+
+redis_service = RedisService()
+
+# Trabajo de script
+redis_service.enqueue_script("script_123", "print('Hello World')")
+
+# Trabajo de conversión de video
+redis_service.enqueue_video_conversion("script_456", "script_content", "video_789")
+
+# Trabajo de extracción de frames
+redis_service.enqueue_frames_extraction("script_789", "script_content", "video_123")
+
+# Trabajo de extracción de metadatos
+redis_service.enqueue_metadata_extraction("script_101", "script_content", "video_456")
+
+# Despliegue de un frontend desde código HTML
+html_code = "<h1>Hola</h1>"
+redis_service.enqueue_frontend_deployment("deploy_001", html_code)
+
+# Despliegue de un frontend basado en npm (tar.gz codificado en base64)
+import base64
+with open("my_app.tar.gz", "rb") as f:
+    encoded = base64.b64encode(f.read()).decode("utf-8")
+redis_service.enqueue_frontend_deployment("deploy_002", encoded, npm=True)
+
+# Trabajo de agentes CLI (requiere main.py en ejecución)
+redis_service.enqueue_agent_task(
+    "issue_123",
+    "gemini",
+    "/ruta/al/proyecto",
+    "# spec.md content"
+)
+
+# Obtener la URL generada para cualquiera de los despliegues
+url = redis_service.r.blpop("results_queue_deploy_002")[1].decode("utf-8")
+print(url)
+```
+
+#### Modo Tradicional
+
 ```bash
 python main.py
 ```
 
-## Estructura del Proyecto
+### Nombres de Colas Redis
+
+- `scripts_queue`: Scripts para generación de imágenes
+- `video_scripts_queue`: Scripts para conversión video-audio
+- `frames_scripts_queue`: Scripts para extracción de frames
+- `metadata_scripts_queue`: Scripts para extracción de metadatos
+- `frontend_queue`: Despliegue de frontends (HTML o proyectos npm)
+- `agents_queue`: Tareas para agentes CLI
+- `agent_results_queue`: Resultados de agentes CLI
+
+## Especificaciones Técnicas
+
+### Dependencias
+
+```
+fastapi==0.104.1
+uvicorn==0.24.0
+mysql-connector-python==8.2.0
+redis==5.0.1
+python-dotenv==1.0.0
+rq==1.15.1
+```
+
+### Formato de Datos
+
+#### Scripts Queue
+```
+"script_id:script_content"
+```
+
+#### Video/Frames/Metadata Queues
+```
+"script_id:script_content:video_id"
+```
+
+#### Agents Queue
+```json
+{
+  "task_issue_id": "issue_123",
+  "agent_kind": "gemini",
+  "project_path": "/ruta/al/proyecto",
+  "spec_md_content": "# spec.md",
+  "params": {
+    "action": "implement"
+  }
+}
+```
+
+#### Estados de Procesamiento
+- `in_progress`: Trabajo en curso
+- `completed`: Trabajo completado exitosamente
+- `failed`: Trabajo falló con error
+
+### Placeholders en Scripts
+
+Los scripts pueden contener placeholders que se reemplazan dinámicamente:
+
+- `{{input_name}}`: Nombre del archivo de entrada (sin extensión)
+
+### Estructura de Directorios
 
 ```
 Grec0AI_backend_py_worker/
